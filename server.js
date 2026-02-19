@@ -101,51 +101,13 @@ async function fetchTeamData() {
 // Serve frontend
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Serve the rotating display-info markdown file
+// Serve the display-info markdown file
 app.get('/api/info', (req, res) => {
+  const infoPath = path.join(__dirname, 'display-info.md');
   const fs = require('fs');
-
-  const configPath = path.join(__dirname, 'config.json');
-  let activeFiles = ['display-info.md']; // Fallback
-  let rotationInterval = 180; // Default 3 mins
-
-  // Try to load config
-  if (fs.existsSync(configPath)) {
-    try {
-      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-      if (config.activeFiles && Array.isArray(config.activeFiles) && config.activeFiles.length > 0) {
-        // Filter out files that don't exist to prevent errors
-        const validFiles = config.activeFiles
-          .map(f => f.trim()) // Remove potentially harmful whitespace
-          .filter(f => fs.existsSync(path.join(__dirname, f)));
-
-        if (validFiles.length > 0) {
-          activeFiles = validFiles;
-        } else {
-          console.warn('⚠️  None of the files in config.json exist. Falling back to default.');
-        }
-      }
-      if (config.rotationIntervalSeconds) {
-        rotationInterval = config.rotationIntervalSeconds;
-      }
-    } catch (e) {
-      console.error('Error reading config.json:', e.message);
-    }
-  }
-
-  // Calculate which file to show based on current timestamp
-  const nowSeconds = Math.floor(Date.now() / 1000);
-  const index = Math.floor(nowSeconds / rotationInterval) % activeFiles.length;
-  const currentFileName = activeFiles[index];
-  const infoPath = path.join(__dirname, currentFileName);
-
   if (!fs.existsSync(infoPath)) {
-    // Should be rare due to filtering above, but possible if file deleted mid-run
-    return res.status(404).send(`# File not found: ${currentFileName}\n\nCheck your \`config.json\`.`);
+    return res.status(404).send('# No info file found\n\nCreate `display-info.md` in the project root.');
   }
-
-  // Send the file content + a header telling frontend when to refresh next
-  res.set('X-Rotation-Interval', rotationInterval);
   res.type('text/plain').send(fs.readFileSync(infoPath, 'utf8'));
 });
 

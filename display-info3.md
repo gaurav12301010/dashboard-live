@@ -1,1 +1,0 @@
-# Cognithon - AI Hackathon

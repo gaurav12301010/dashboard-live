@@ -352,9 +352,8 @@
     loadData();
     loadInfo();
     setInterval(loadData, REFRESH_INTERVAL * 1000);
-    // Reload info every 10 seconds to catch rotation updates quickly
-    // The server handles the actual rotation timing
-    setInterval(loadInfo, 10 * 1000);
+    // Reload info every 5 minutes so updates to the file reflect live
+    setInterval(loadInfo, 5 * 60 * 1000);
   </script>
 
 </body>
