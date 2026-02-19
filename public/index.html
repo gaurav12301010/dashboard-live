@@ -336,21 +336,99 @@
     }
 
     // ── Load info panel (markdown) ─────────────────────────
-    let currentPage = 1;
-    async function loadInfo() {
+    // ── Load info panel (markdown) ─────────────────────────
+    const INFO_PAGES = [
+      `### ✅ Recommended format
+
+\`\`\`
+<type>(scope): short, imperative description
+\`\`\`
+### 1. New feature (frontend)
+\`\`\`
+feat(frontend): add login page UI
+\`\`\`
+### 2. New feature (backend)
+\`\`\`
+feat(backend): implement user authentication
+\`\`\`
+### 3. Bug fix
+\`\`\`
+fix(backend): prevent login with empty credentials
+\`\`\`
+### 4. Refactor
+\`\`\`
+refactor(backend): simplify password hashing logic
+\`\`\`
+### 5. Documentation update
+
+\`\`\`
+docs(readme): add API setup instructions
+\`\`\`
+### Common commit types for students
+
+* \`feat\` – new feature
+* \`fix\` – bug fix
+* \`refactor\` – code change that doesn’t add a feature or fix a bug
+* \`docs\` – documentation only
+* \`test\` – adding or updating tests
+* \`chore\` – tooling, configs, dependencies
+---`,
+      `## Hello Teams 
+
+Every effort you make today compounds into the success you’ll see tomorrow.  
+Stay focused, trust your abilities, and give your best—progress comes from showing up with intent and consistency.  
+Believe in the journey and keep moving forward.  
+
+And now, those team members who want to sleep… you may sleep 😄`,
+      `# **📜 Rules & Regulations**
+
+## **🎟️ Venue Entry & Conduct Guidelines**
+
+To ensure safety, security, and smooth operations inside the venue, all attendees must strictly follow the rules mentioned below:
+
+---
+
+### **🚫🎒 No Bags Allowed Inside the Venue**
+
+Entry with bags of any kind is strictly prohibited inside the venue premises.  
+Please make necessary arrangements before arrival. Security personnel reserve the right to deny entry if this rule is not followed.
+
+---
+
+### **⚠️📢 Report Issues Immediately**
+
+If you notice any problem, inconvenience, or safety concern in your assigned area, you must immediately inform the 🏢 Help Desk.  
+Prompt reporting helps us maintain safety and resolve issues efficiently.
+
+---
+
+### **🛑🗂️ Responsibility for Assigned Desk**
+
+You will be held responsible for your assigned desk or area.  
+If any item or material is found missing from your desk, you will be accountable for it.
+
+---
+
+### **✅ Your Cooperation is Appreciated**
+
+Thank you for helping us maintain a safe, secure, and well-organized environment.`
+    ];
+
+    let currentPage = 0;
+
+    function loadInfo() {
       const panel = document.getElementById('info-panel');
       try {
-        const res = await fetch(`/api/info?page=${currentPage}`);
-        const text = await res.text();
+        const text = INFO_PAGES[currentPage];
         // marked.js converts markdown → HTML
         panel.innerHTML = marked.parse(text);
       } catch (e) {
-        panel.textContent = 'Could not load display-info.md';
+        panel.textContent = 'Could not load info';
       }
 
       // Cycle to next page for next call
       currentPage++;
-      if (currentPage > 3) currentPage = 1;
+      if (currentPage >= INFO_PAGES.length) currentPage = 0;
     }
 
     // ── Kick off ───────────────────────────────────────────

@@ -102,24 +102,7 @@ async function fetchTeamData() {
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Serve the display-info markdown file
-app.get('/api/info', (req, res) => {
-  const page = parseInt(req.query.page) || 1;
-  let filename = 'display-info.md';
 
-  if (page === 2) filename = 'display-info2.md';
-  if (page === 3) filename = 'display-info3.md';
-
-  const infoPath = path.join(__dirname, filename);
-  const fs = require('fs');
-  if (!fs.existsSync(infoPath)) {
-    // Fallback to default if specific page missing, or 404 if default missing
-    if (page !== 1 && fs.existsSync(path.join(__dirname, 'display-info.md'))) {
-      return res.type('text/plain').send(fs.readFileSync(path.join(__dirname, 'display-info.md'), 'utf8'));
-    }
-    return res.status(404).send('# No info file found\n\nCreate `display-info.md` in the project root.');
-  }
-  res.type('text/plain').send(fs.readFileSync(infoPath, 'utf8'));
-});
 
 // API endpoint
 app.get('/api/teams', async (req, res) => {
