@@ -114,7 +114,16 @@ app.get('/api/info', (req, res) => {
     try {
       const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
       if (config.activeFiles && Array.isArray(config.activeFiles) && config.activeFiles.length > 0) {
-        activeFiles = config.activeFiles;
+        // Filter out files that don't exist to prevent errors
+        const validFiles = config.activeFiles
+          .map(f => f.trim()) // Remove potentially harmful whitespace
+          .filter(f => fs.existsSync(path.join(__dirname, f)));
+
+        if (validFiles.length > 0) {
+          activeFiles = validFiles;
+        } else {
+          console.warn('⚠️  None of the files in config.json exist. Falling back to default.');
+        }
       }
       if (config.rotationIntervalSeconds) {
         rotationInterval = config.rotationIntervalSeconds;
@@ -125,34 +134,17 @@ app.get('/api/info', (req, res) => {
   }
 
   // Calculate which file to show based on current timestamp
-  // We use Math.floor(Date.now() / 1000 / interval) % count
   const nowSeconds = Math.floor(Date.now() / 1000);
-  // Debug: check for hidden characters
-  console.log(`[DEBUG] Config file: "${currentFileName}"`);
-  console.log(`[DEBUG] Config file hex:`, Buffer.from(currentFileName).toString('hex'));
-
-  const infoPath = path.resolve(__dirname, currentFileName);
-  console.log(`[DEBUG] Resolved Path: "${infoPath}"`);
+  const index = Math.floor(nowSeconds / rotationInterval) % activeFiles.length;
+  const currentFileName = activeFiles[index];
+  const infoPath = path.join(__dirname, currentFileName);
 
   if (!fs.existsSync(infoPath)) {
-    console.error(`[ERROR] File DOES NOT EXIST at: "${infoPath}"`);
-    // List directory to see what IS there
-    try {
-      const dirFiles = fs.readdirSync(__dirname);
-      console.log(`[DEBUG] Directory listing:`, dirFiles);
-      const match = dirFiles.find(f => f === currentFileName);
-      console.log(`[DEBUG] Found in dir? ${match ? 'YES' : 'NO'}`);
-      if (match) {
-        console.log(`[DEBUG] Dir file hex:`, Buffer.from(match).toString('hex'));
-      }
-    } catch (e) {
-      console.error('[DEBUG] Failed to list directory:', e);
-    }
+    // Should be rare due to filtering above, but possible if file deleted mid-run
     return res.status(404).send(`# File not found: ${currentFileName}\n\nCheck your \`config.json\`.`);
   }
 
   // Send the file content + a header telling frontend when to refresh next
-  // (optional, but good for keeping sync)
   res.set('X-Rotation-Interval', rotationInterval);
   res.type('text/plain').send(fs.readFileSync(infoPath, 'utf8'));
 });
