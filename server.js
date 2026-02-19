@@ -130,6 +130,7 @@ app.get('/api/info', (req, res) => {
   const index = Math.floor(nowSeconds / rotationInterval) % activeFiles.length;
   const currentFileName = activeFiles[index];
   const infoPath = path.join(__dirname, currentFileName);
+  console.log(`[DEBUG] Index: ${index}, File: ${currentFileName}, Path: ${infoPath}`);
 
   if (!fs.existsSync(infoPath)) {
     return res.status(404).send(`# File not found: ${currentFileName}\n\nCheck your \`config.json\`.`);
