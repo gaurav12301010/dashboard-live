@@ -336,24 +336,29 @@
     }
 
     // ── Load info panel (markdown) ─────────────────────────
+    let currentPage = 1;
     async function loadInfo() {
       const panel = document.getElementById('info-panel');
       try {
-        const res = await fetch('/api/info');
+        const res = await fetch(`/api/info?page=${currentPage}`);
         const text = await res.text();
         // marked.js converts markdown → HTML
         panel.innerHTML = marked.parse(text);
       } catch (e) {
         panel.textContent = 'Could not load display-info.md';
       }
+
+      // Cycle to next page for next call
+      currentPage++;
+      if (currentPage > 3) currentPage = 1;
     }
 
     // ── Kick off ───────────────────────────────────────────
     loadData();
     loadInfo();
     setInterval(loadData, REFRESH_INTERVAL * 1000);
-    // Reload info every 5 minutes so updates to the file reflect live
-    setInterval(loadInfo, 5 * 60 * 1000);
+    // Cycle info every 3 seconds
+    setInterval(loadInfo, 3000);
   </script>
 
 </body>
