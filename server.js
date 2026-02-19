@@ -101,13 +101,44 @@ async function fetchTeamData() {
 // Serve frontend
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Serve the display-info markdown file
+// Serve the rotating display-info markdown file
 app.get('/api/info', (req, res) => {
-  const infoPath = path.join(__dirname, 'display-info.md');
   const fs = require('fs');
-  if (!fs.existsSync(infoPath)) {
-    return res.status(404).send('# No info file found\n\nCreate `display-info.md` in the project root.');
+  const yaml = require('js-yaml');
+
+  const configPath = path.join(__dirname, 'config.yaml');
+  let activeFiles = ['display-info.md']; // Fallback
+  let rotationInterval = 180; // Default 3 mins
+
+  // Try to load config
+  if (fs.existsSync(configPath)) {
+    try {
+      const config = yaml.load(fs.readFileSync(configPath, 'utf8'));
+      if (config.activeFiles && Array.isArray(config.activeFiles) && config.activeFiles.length > 0) {
+        activeFiles = config.activeFiles;
+      }
+      if (config.rotationIntervalSeconds) {
+        rotationInterval = config.rotationIntervalSeconds;
+      }
+    } catch (e) {
+      console.error('Error reading config.yaml:', e.message);
+    }
   }
+
+  // Calculate which file to show based on current timestamp
+  // We use Math.floor(Date.now() / 1000 / interval) % count
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  const index = Math.floor(nowSeconds / rotationInterval) % activeFiles.length;
+  const currentFileName = activeFiles[index];
+  const infoPath = path.join(__dirname, currentFileName);
+
+  if (!fs.existsSync(infoPath)) {
+    return res.status(404).send(`# File not found: ${currentFileName}\n\nCheck your \`config.yaml\`.`);
+  }
+
+  // Send the file content + a header telling frontend when to refresh next
+  // (optional, but good for keeping sync)
+  res.set('X-Rotation-Interval', rotationInterval);
   res.type('text/plain').send(fs.readFileSync(infoPath, 'utf8'));
 });
 
