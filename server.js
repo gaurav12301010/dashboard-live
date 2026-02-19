@@ -104,16 +104,15 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Serve the rotating display-info markdown file
 app.get('/api/info', (req, res) => {
   const fs = require('fs');
-  const yaml = require('js-yaml');
 
-  const configPath = path.join(__dirname, 'config.yaml');
+  const configPath = path.join(__dirname, 'config.json');
   let activeFiles = ['display-info.md']; // Fallback
   let rotationInterval = 180; // Default 3 mins
 
   // Try to load config
   if (fs.existsSync(configPath)) {
     try {
-      const config = yaml.load(fs.readFileSync(configPath, 'utf8'));
+      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
       if (config.activeFiles && Array.isArray(config.activeFiles) && config.activeFiles.length > 0) {
         activeFiles = config.activeFiles;
       }
@@ -121,7 +120,7 @@ app.get('/api/info', (req, res) => {
         rotationInterval = config.rotationIntervalSeconds;
       }
     } catch (e) {
-      console.error('Error reading config.yaml:', e.message);
+      console.error('Error reading config.json:', e.message);
     }
   }
 
@@ -133,7 +132,7 @@ app.get('/api/info', (req, res) => {
   const infoPath = path.join(__dirname, currentFileName);
 
   if (!fs.existsSync(infoPath)) {
-    return res.status(404).send(`# File not found: ${currentFileName}\n\nCheck your \`config.yaml\`.`);
+    return res.status(404).send(`# File not found: ${currentFileName}\n\nCheck your \`config.json\`.`);
   }
 
   // Send the file content + a header telling frontend when to refresh next

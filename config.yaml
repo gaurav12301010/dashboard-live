@@ -1,8 +1,0 @@
-# Rotate between these files for the info panel
-activeFiles:
-  - display-info1.md
-  - display-info2.md
-  - display-info3.md
-
-# How long to show each file in seconds (default: 180s = 3 minutes)
-rotationIntervalSeconds: 5
