@@ -1,0 +1,84 @@
+# Hackathon Live Commit Dashboard
+
+A **local-only** dashboard that polls a GitHub organization's repositories, counts commits per team, and displays a live bar chart on a large screen. Runs entirely on a PC — no cloud, no deployment.
+
+## Proposed Changes
+
+### Backend
+
+---
+
+#### [NEW] [package.json](file:///c:/Users/Gaurav%20Kumar%20Saha/Desktop/dashboard%20live/package.json)
+- Defines the Node.js project with `express` and `node-fetch` as dependencies.
+- Includes `"start": "node server.js"` script.
+
+#### [NEW] [server.js](file:///c:/Users/Gaurav%20Kumar%20Saha/Desktop/dashboard%20live/server.js)
+- Express server on port `3000`.
+- Reads `GITHUB_TOKEN` and `GITHUB_ORG` from `.env` using the `dotenv` package.
+- `GET /api/teams` endpoint:
+  - Fetches all repos in the org via `GET /orgs/{org}/repos?per_page=100`.
+  - For each repo, calls `GET /repos/{org}/{repo}/commits?per_page=1` and reads `X-RateLimit-Remaining` header. Uses the `Link` header's `last` page number as the commit count trick, OR fetches the contributor stats to sum totals — will use the **Link header pagination trick** (cheap, single request per repo).
+  - Returns `[{ team, commits }]` sorted descending.
+- Serves `public/` as static files.
+- Caches results for 55 seconds to avoid hammering the API.
+
+> [!NOTE]
+> **Commit counting strategy**: `GET /repos/{org}/{repo}/commits?per_page=1` returns a `Link` header with a `last` page number. That last page number = total commits. This is O(1) per repo — no pagination loop needed.
+
+#### [NEW] [.env.example](file:///c:/Users/Gaurav%20Kumar%20Saha/Desktop/dashboard%20live/.env.example)
+```
+GITHUB_TOKEN=ghp_your_token_here
+GITHUB_ORG=your-org-name
+PORT=3000
+```
+
+#### [NEW] [.gitignore](file:///c:/Users/Gaurav%20Kumar%20Saha/Desktop/dashboard%20live/.gitignore)
+- Ignores `node_modules/`, `.env`
+
+---
+
+### Frontend
+
+---
+
+#### [NEW] [public/index.html](file:///c:/Users/Gaurav%20Kumar%20Saha/Desktop/dashboard%20live/public/index.html)
+- Single HTML file with embedded CSS + JS (no external build step).
+- **Dark theme**: deep navy/charcoal background, vivid gradient bars.
+- **Bar chart**: CSS/JS-driven horizontal bars, animated on load and refresh. Each bar shows:
+  - Team name (large font)
+  - Commit count badge
+  - Animated fill on data update
+- **Header**: Dashboard title + live clock.
+- **Footer**: "Refreshing in Xs" countdown + "Last updated: HH:MM:SS".
+- **Auto-refresh**: `setInterval` every 60 seconds fetching `/api/teams`.
+- Uses Google Fonts (Inter) loaded via `<link>` — works offline if cached, or falls back gracefully.
+
+---
+
+### Documentation
+
+---
+
+#### [NEW] [README.md](file:///c:/Users/Gaurav%20Kumar%20Saha/Desktop/dashboard%20live/README.md)
+Step-by-step setup and run instructions:
+1. Install Node.js
+2. `npm install`
+3. Copy `.env.example` → `.env`, fill in token and org
+4. `npm start`
+5. Open `http://localhost:3000`
+
+## Verification Plan
+
+### Manual Verification
+
+1. **Start the server**:
+   ```
+   cd "c:\Users\Gaurav Kumar Saha\Desktop\dashboard live"
+   npm install
+   # Copy .env.example to .env and fill real values
+   npm start
+   ```
+2. **Open browser** at `http://localhost:3000` — confirm dashboard loads with dark theme.
+3. **Check API** at `http://localhost:3000/api/teams` — confirm JSON array with `team` and `commits` fields.
+4. **Wait 60 seconds** — confirm auto-refresh fires and countdown timer works.
+5. **Readability check**: View from a distance, confirm bar labels and commit counts are legible.

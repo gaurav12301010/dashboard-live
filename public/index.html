@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Cognithon Commit Leaderboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- marked.js for markdown rendering (loaded from CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: #ffffff;
+      color: #000;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Top bar: clock left, title center ── */
+    .topbar {
+      display: flex;
+      align-items: center;
+      padding: 20px 32px 12px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .clock-box {
+      width: 180px;
+      flex-shrink: 0;
+    }
+
+    .clock {
+      font-size: 28px;
+      font-weight: bold;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 2px;
+      color: #222;
+    }
+
+    .clock-date {
+      font-size: 11px;
+      color: #888;
+      margin-top: 2px;
+    }
+
+    .title-box {
+      flex: 1;
+      text-align: center;
+    }
+
+    .title-box h1 {
+      font-size: 26px;
+      margin-bottom: 3px;
+    }
+
+    .title-box .subtitle {
+      font-size: 13px;
+      color: #555;
+    }
+
+    /* spacer to balance the clock on the left */
+    .topbar-right {
+      width: 180px;
+      flex-shrink: 0;
+      text-align: right;
+      font-size: 13px;
+      color: #555;
+    }
+
+    /* ── Two-column layout ── */
+    .columns {
+      display: flex;
+      flex: 1;
+      gap: 0;
+    }
+
+    /* Left column: bar chart */
+    .col-chart {
+      flex: 1;
+      padding: 28px 32px;
+      border-right: 1px solid #e0e0e0;
+      min-width: 0;
+    }
+
+    .col-chart h2 {
+      font-size: 15px;
+      color: #444;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .label {
+      width: 130px;
+      font-size: 15px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex-shrink: 0;
+    }
+
+    .bar-container {
+      flex: 1;
+      background: #f0f0f0;
+      height: 24px;
+      margin-right: 10px;
+    }
+
+    .bar {
+      height: 100%;
+      transition: width 0.8s ease;
+    }
+
+    .value {
+      width: 50px;
+      font-size: 14px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    /* Right column: markdown info panel */
+    .col-info {
+      width: 500px;
+      flex-shrink: 0;
+      padding: 28px 28px;
+      background: #fafafa;
+      overflow-y: auto;
+    }
+
+    /* Rendered markdown styles */
+    .col-info h1,
+    .col-info h2,
+    .col-info h3 {
+      margin-top: 18px;
+      margin-bottom: 8px;
+      font-size: 16px;
+      color: #222;
+    }
+
+    .col-info h1 {
+      font-size: 20px;
+      margin-top: 0;
+    }
+
+    .col-info p {
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 10px;
+      color: #333;
+    }
+
+    .col-info ul,
+    .col-info ol {
+      padding-left: 20px;
+      margin-bottom: 10px;
+    }
+
+    .col-info li {
+      font-size: 14px;
+      line-height: 1.7;
+      color: #333;
+    }
+
+    .col-info hr {
+      border: none;
+      border-top: 1px solid #ddd;
+      margin: 14px 0;
+    }
+
+    .col-info strong {
+      color: #111;
+    }
+
+    .col-info table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-bottom: 10px;
+      font-size: 13px;
+    }
+
+    .col-info th {
+      background: #eee;
+      padding: 5px 8px;
+      text-align: left;
+      border: 1px solid #ddd;
+    }
+
+    .col-info td {
+      padding: 5px 8px;
+      border: 1px solid #ddd;
+    }
+
+    .col-info code {
+      background: #eee;
+      padding: 1px 4px;
+      border-radius: 3px;
+      font-size: 13px;
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 12px;
+      font-size: 12px;
+      color: #888;
+      border-top: 1px solid #e0e0e0;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="clock-box">
+      <div class="clock" id="clock">00:00:00</div>
+      <div class="clock-date" id="clock-date"></div>
+    </div>
+    <div class="title-box">
+      <h1>Cognithon Commit Leaderboard</h1>
+      <div class="subtitle">Number of GitHub commits per team</div>
+    </div>
+    <div class="topbar-right">
+      Refreshing in <strong><span id="countdown">60</span>s</strong>
+    </div>
+  </div>
+
+  <!-- Two columns -->
+  <div class="columns">
+
+    <!-- Left: bar chart -->
+    <div class="col-chart">
+      <h2>Team Rankings</h2>
+      <div id="chart">Loading data…</div>
+    </div>
+
+    <!-- Right: info panel from display-info.md -->
+    <div class="col-info">
+      <div id="info-panel">Loading info…</div>
+    </div>
+
+  </div>
+
+  <footer>
+    Last updated: <span id="last-updated">—</span>
+  </footer>
+
+  <script>
+    const REFRESH_INTERVAL = 60;
+    let countdown = REFRESH_INTERVAL;
+    let countdownTimer = null;
+
+    // ── Clock ──────────────────────────────────────────────
+    function updateClock() {
+      const now = new Date();
+      const hh = String(now.getHours()).padStart(2, '0');
+      const mm = String(now.getMinutes()).padStart(2, '0');
+      const ss = String(now.getSeconds()).padStart(2, '0');
+      document.getElementById('clock').textContent = `${hh}:${mm}:${ss}`;
+      document.getElementById('clock-date').textContent =
+        now.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    // ── Countdown ──────────────────────────────────────────
+    function startCountdown() {
+      countdown = REFRESH_INTERVAL;
+      document.getElementById('countdown').textContent = countdown;
+      clearInterval(countdownTimer);
+      countdownTimer = setInterval(() => {
+        countdown--;
+        document.getElementById('countdown').textContent = Math.max(0, countdown);
+        if (countdown <= 0) clearInterval(countdownTimer);
+      }, 1000);
+    }
+
+    // ── Bar colour: green → blue ───────────────────────────
+    function gradientColor(index, total) {
+      const ratio = total <= 1 ? 0 : index / (total - 1);
+      const start = { r: 34, g: 197, b: 94 }; // green
+      const end = { r: 74, g: 144, b: 226 }; // blue
+      const r = Math.round(start.r + (end.r - start.r) * ratio);
+      const g = Math.round(start.g + (end.g - start.g) * ratio);
+      const b = Math.round(start.b + (end.b - start.b) * ratio);
+      return `rgb(${r},${g},${b})`;
+    }
+
+    // ── Load chart data ────────────────────────────────────
+    async function loadData() {
+      const chart = document.getElementById('chart');
+      try {
+        const res = await fetch('/api/teams');
+        const { teams, updatedAt } = await res.json();
+
+        chart.innerHTML = '';
+        const maxCommits = Math.max(...teams.map(t => t.commits), 1);
+
+        teams.forEach((team, index) => {
+          const percent = (team.commits / maxCommits) * 100;
+          const color = gradientColor(index, teams.length);
+          const row = document.createElement('div');
+          row.className = 'row';
+          row.innerHTML = `
+            <div class="label" title="${team.team}">${team.team}</div>
+            <div class="bar-container">
+              <div class="bar" style="width:${percent}%; background:${color};"></div>
+            </div>
+            <div class="value">${team.commits}</div>
+          `;
+          chart.appendChild(row);
+        });
+
+        document.getElementById('last-updated').textContent =
+          new Date(updatedAt).toLocaleTimeString();
+
+      } catch (e) {
+        chart.textContent = 'Failed to load data.';
+      } finally {
+        startCountdown();
+      }
+    }
+
+    // ── Load info panel (markdown) ─────────────────────────
+    async function loadInfo() {
+      const panel = document.getElementById('info-panel');
+      try {
+        const res = await fetch('/api/info');
+        const text = await res.text();
+        // marked.js converts markdown → HTML
+        panel.innerHTML = marked.parse(text);
+      } catch (e) {
+        panel.textContent = 'Could not load display-info.md';
+      }
+    }
+
+    // ── Kick off ───────────────────────────────────────────
+    loadData();
+    loadInfo();
+    setInterval(loadData, REFRESH_INTERVAL * 1000);
+    // Reload info every 5 minutes so updates to the file reflect live
+    setInterval(loadInfo, 5 * 60 * 1000);
+  </script>
+
+</body>
+
+</html>
